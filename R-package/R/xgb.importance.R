@@ -140,6 +140,7 @@ xgb.importance <- function(feature_names, filename_dump) {
       fmap[[feature_names[x]]] <<- 0
       nmap[[x]] <<- feature_names[x]
      })
+  total <- 0
   sapply(readLines(filename_dump),
     function(x) {
       m <- regexec("\\[f.*\\]", x)
