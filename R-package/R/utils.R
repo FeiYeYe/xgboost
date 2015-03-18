@@ -261,6 +261,6 @@ xgb.cv.optimal <- function(x) {
     if (sum(regx) != 1) {                                                                 
       stop("[xgb.cv.optimal] the cv column is not uniquely identified", call. = FALSE)    
     }                                                                                     
-  which.max(x[[which(index)]])                                                          
+  which.max(x[[which(regx)]])                                                          
 }                                                                                       
 
