@@ -25,5 +25,5 @@ xgb.load <- function(modelfile) {
    bst <- xgb.handleToBooster(handle)
    bst <- xgb.Booster.check(bst)
    return(bst)
-  }, error = function(e) { xgboost.legacy::xgb.load(modelfile) }
+  }, error = function(e) { xgboost.legacy::xgb.load(modelfile) })
 } 
