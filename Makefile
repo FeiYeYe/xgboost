@@ -59,7 +59,7 @@ Rpack:
 	cat R-package/src/Makevars.win|sed '2s/.*/PKGROOT=./' > xgboost/src/Makevars.win
 	R CMD build xgboost
 	rm -rf xgboost
-	R CMD check --as-cran xgboost*.tar.gz
+	#R CMD check --as-cran xgboost*.tar.gz
 
 clean:
 	$(RM) $(OBJ) $(BIN) $(SLIB) *.o  */*.o */*/*.o *~ */*~ */*/*~
