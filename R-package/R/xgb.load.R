@@ -15,9 +15,16 @@
 #' bst <- xgb.load('xgb.model')
 #' pred <- predict(bst, test$data)
 #' @export
-#' 
+#'
+
 xgb.load <- function(modelfile) {
-  if (is.null(modelfile)) 
-    stop("xgb.load: modelfile cannot be NULL")
-  xgb.Booster(modelfile = modelfile)
+  tryCatch({
+    if (is.null(modelfile)) 
+      stop("xgb.load: modelfile cannot be NULL")
+  
+   handle <- xgb.Booster(modelfile = modelfile)
+   bst <- xgb.handleToBooster(handle)
+   bst <- xgb.Booster.check(bst)
+   return(bst)
+  }, error = function(e) { xgboost.legacy1::xgb.load(modelfile) }
 } 
