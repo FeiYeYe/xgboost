@@ -1,4 +1,4 @@
-Package: xgboost
+Package: xgboost.legacy
 Type: Package
 Title: eXtreme Gradient Boosting
 Version: 0.3-2
