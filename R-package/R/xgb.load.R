@@ -17,11 +17,13 @@
 #' @export
 #' 
 xgb.load <- function(modelfile) {
-  if (is.null(modelfile)) 
-    stop("xgb.load: modelfile cannot be NULL")
+  tryCatch({
+    if (is.null(modelfile)) 
+      stop("xgb.load: modelfile cannot be NULL")
   
-  handle <- xgb.Booster(modelfile = modelfile)
-  bst <- xgb.handleToBooster(handle)
-  bst <- xgb.Booster.check(bst)
-  return(bst)
+   handle <- xgb.Booster(modelfile = modelfile)
+   bst <- xgb.handleToBooster(handle)
+   bst <- xgb.Booster.check(bst)
+   return(bst)
+  }, error = function(e) { xgboost.legacy::xgb.load(modelfile) }
 } 
