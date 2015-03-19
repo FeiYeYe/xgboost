@@ -104,7 +104,7 @@ Rpack:
 	# R CMD build --no-build-vignettes xgboost
 	R CMD build xgboost
 	rm -rf xgboost
-	R CMD check --as-cran xgboost*.tar.gz
+	#R CMD check --as-cran xgboost*.tar.gz
 
 clean:
 	$(RM) -rf $(OBJ) $(BIN) $(MPIBIN) $(MPIOBJ) $(SLIB) *.o  */*.o */*/*.o *~ */*~ */*/*~
