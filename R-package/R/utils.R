@@ -3,10 +3,10 @@
 
 # depends on matrix
 .onLoad <- function(libname, pkgname) {
-  library.dynam("xgboost", pkgname, libname)
+  library.dynam("xgboost.legacy", pkgname, libname)
 }
 .onUnload <- function(libpath) {
-  library.dynam.unload("xgboost", libpath)
+  library.dynam.unload("xgboost.legacy", libpath)
 }
 
 # set information into dmatrix, this mutate dmatrix
