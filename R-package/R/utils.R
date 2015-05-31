@@ -256,11 +256,11 @@ xgb.cv.aggcv <- function(res, showsd = TRUE) {
   }
   return (ret)
 }
-xgb.cv.optimal <- function(x) {                                                         
+xgb.cv.optimal <- function(x, auc = TRUE) {                                                         
   regx <- grepl("^test(.*)mean$", names(x))                                             
     if (sum(regx) != 1) {                                                                 
       stop("[xgb.cv.optimal] the cv column is not uniquely identified", call. = FALSE)    
-    }                                                                                     
-  which.max(x[[which(regx)]])                                                          
+    }
+  if (auc) which.max(x[[which(regx)]]) else which.min(x[[which(regx)]])
 }                                                                                       
 
