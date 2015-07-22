@@ -30,6 +30,7 @@
 #'   performance and construction progress information
 #' @param missing Missing is only used when input is dense matrix, pick a float 
 #'     value that represents missing value. Sometimes a data use 0 or other extreme value to represents missing values.
+#' @param weight the weights of samples.
 #' @param ... other parameters to pass to \code{params}.
 #' 
 #' @details 
@@ -50,12 +51,20 @@
 #' 
 #' @export
 #' 
-xgboost <- function(data = NULL, label = NULL, missing = NULL, params = list(), nrounds, 
+xgboost <- function(data = NULL, label = NULL, missing = NULL, weight = NULL, params = list(), nrounds, 
                     verbose = 1, ...) {
   if (is.null(missing)) {
-    dtrain <- xgb.get.DMatrix(data, label)
+    if (is.null(weight)) {
+      dtrain <- xgb.get.DMatrix(data, label)
+    } else {
+      dtrain <- xgb.get.DMatrix(data, label, weight = weight)
+    }
   } else {
-    dtrain <- xgb.get.DMatrix(data, label, missing)
+    if (is.null(weight)) {
+      dtrain <- xgb.get.DMatrix(data, label, missing)
+    } else {
+      dtrain <- xgb.get.DMatrix(data, label, missing, weight)
+    }
   }
     
   params <- append(params, list(...))
