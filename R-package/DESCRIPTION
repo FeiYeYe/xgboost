@@ -1,4 +1,4 @@
-Package: xgboost
+Package: xgboost.legacy
 Type: Package
 Title: eXtreme Gradient Boosting
 Version: 1.0.6
@@ -31,3 +31,4 @@ Imports:
     ggplot2 (>= 1.0.0),
     Ckmeans.1d.dp (>= 3.3.1),
     vcd (>= 1.3)
+    stringr
