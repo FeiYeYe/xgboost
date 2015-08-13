@@ -221,7 +221,9 @@ xgb.cv.mknfold <- function(dall, nfold, param) {
   if (nfold <= 1) {
     stop("nfold must be bigger than 1")
   }
-  randidx <- sample(1 : xgb.numrow(dall))
+  #randidx <- sample(1 : xgb.numrow(dall))
+  # FIX
+  randidx <- Reduce(c, caret::createFolds(getinfo(dall, 'label'), nfold))
   kstep <- length(randidx) %/% nfold
   idset <- list()
   for (i in 1:(nfold-1)) {
