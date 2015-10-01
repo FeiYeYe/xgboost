@@ -5,8 +5,8 @@
  * 
  * \author Ignacio Cano, Tianqi Chen
  */
-#ifndef RABIT_ALLREDUCE_MOCK_H
-#define RABIT_ALLREDUCE_MOCK_H
+#ifndef RABIT_ALLREDUCE_MOCK_H_
+#define RABIT_ALLREDUCE_MOCK_H_
 #include <vector>
 #include <map>
 #include <sstream>
@@ -31,6 +31,7 @@ class AllreduceMock : public AllreduceRobust {
     AllreduceRobust::SetParam(name, val);
     // additional parameters
     if (!strcmp(name, "rabit_num_trial")) num_trial = atoi(val);
+    if (!strcmp(name, "DMLC_NUM_ATTEMPT")) num_trial = atoi(val);
     if (!strcmp(name, "report_stats")) report_stats = atoi(val);
     if (!strcmp(name, "force_local")) force_local = atoi(val);
     if (!strcmp(name, "mock")) {
@@ -57,8 +58,8 @@ class AllreduceMock : public AllreduceRobust {
     this->Verify(MockKey(rank, version_number, seq_counter, num_trial), "Broadcast");
     AllreduceRobust::Broadcast(sendrecvbuf_, total_size, root);
   }
-  virtual int LoadCheckPoint(ISerializable *global_model,
-                             ISerializable *local_model) {
+  virtual int LoadCheckPoint(Serializable *global_model,
+                             Serializable *local_model) {
     tsum_allreduce = 0.0;
     time_checkpoint = utils::GetTime();
     if (force_local == 0) {
@@ -69,8 +70,8 @@ class AllreduceMock : public AllreduceRobust {
       return AllreduceRobust::LoadCheckPoint(&dum, &com);
     }    
   }
-  virtual void CheckPoint(const ISerializable *global_model,
-                          const ISerializable *local_model) {
+  virtual void CheckPoint(const Serializable *global_model,
+                          const Serializable *local_model) {
     this->Verify(MockKey(rank, version_number, seq_counter, num_trial), "CheckPoint");
     double tstart = utils::GetTime();
     double tbet_chkpt = tstart - time_checkpoint;
@@ -81,21 +82,21 @@ class AllreduceMock : public AllreduceRobust {
       ComboSerializer com(global_model, local_model);
       AllreduceRobust::CheckPoint(&dum, &com);
     }
-    tsum_allreduce = 0.0;
     time_checkpoint = utils::GetTime();
     double tcost = utils::GetTime() - tstart;
     if (report_stats != 0 && rank == 0) {
       std::stringstream ss;
       ss << "[v" << version_number << "] global_size=" << global_checkpoint.length()
-         << "local_size=" << local_chkpt[local_chkpt_version].length()
-         << "check_tcost="<< tcost <<" sec,"
-         << "allreduce_tcost=" << tsum_allreduce << " sec,"
-         << "between_chpt=" << tbet_chkpt << "sec\n";
+         << ",local_size=" << (local_chkpt[0].length() + local_chkpt[1].length())
+         << ",check_tcost="<< tcost <<" sec"
+         << ",allreduce_tcost=" << tsum_allreduce << " sec"
+         << ",between_chpt=" << tbet_chkpt << "sec\n";
       this->TrackerPrint(ss.str());
     }
+    tsum_allreduce = 0.0;
   }
 
-  virtual void LazyCheckPoint(const ISerializable *global_model) {
+  virtual void LazyCheckPoint(const Serializable *global_model) {
     this->Verify(MockKey(rank, version_number, seq_counter, num_trial), "LazyCheckPoint");
     AllreduceRobust::LazyCheckPoint(global_model);
   }
@@ -109,28 +110,28 @@ class AllreduceMock : public AllreduceRobust {
   double time_checkpoint;
   
  private:
-  struct DummySerializer : public ISerializable {
-    virtual void Load(IStream &fi) {
+  struct DummySerializer : public Serializable {
+    virtual void Load(Stream *fi) {
     }
-    virtual void Save(IStream &fo) const {
+    virtual void Save(Stream *fo) const {
     }
   };
-  struct ComboSerializer : public ISerializable {
-    ISerializable *lhs;
-    ISerializable *rhs;
-    const ISerializable *c_lhs;
-    const ISerializable *c_rhs;
-    ComboSerializer(ISerializable *lhs, ISerializable *rhs)
+  struct ComboSerializer : public Serializable {
+    Serializable *lhs;
+    Serializable *rhs;
+    const Serializable *c_lhs;
+    const Serializable *c_rhs;
+    ComboSerializer(Serializable *lhs, Serializable *rhs)
         : lhs(lhs), rhs(rhs), c_lhs(lhs), c_rhs(rhs) {
     }
-    ComboSerializer(const ISerializable *lhs, const ISerializable *rhs)
+    ComboSerializer(const Serializable *lhs, const Serializable *rhs)
         : lhs(NULL), rhs(NULL), c_lhs(lhs), c_rhs(rhs) {
     }    
-    virtual void Load(IStream &fi) {
+    virtual void Load(Stream *fi) {
       if (lhs != NULL) lhs->Load(fi);
       if (rhs != NULL) rhs->Load(fi);
     }
-    virtual void Save(IStream &fo) const {
+    virtual void Save(Stream *fo) const {
       if (c_lhs != NULL) c_lhs->Save(fo);
       if (c_rhs != NULL) c_rhs->Save(fo);
     }
@@ -172,4 +173,4 @@ class AllreduceMock : public AllreduceRobust {
 };
 }  // namespace engine
 }  // namespace rabit
-#endif // RABIT_ALLREDUCE_MOCK_H
+#endif // RABIT_ALLREDUCE_MOCK_H_
