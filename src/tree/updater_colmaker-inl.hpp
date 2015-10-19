@@ -555,6 +555,7 @@ class ColMaker: public IUpdater {
       if (poption == 2) {
         poption = static_cast<int>(nsize) * 2 < nthread ? 1 : 0;
       }
+      poption = 0;
       if (poption == 0) {
         #pragma omp parallel for schedule(dynamic, batch_size)
         for (bst_omp_uint i = 0; i < nsize; ++i) {
