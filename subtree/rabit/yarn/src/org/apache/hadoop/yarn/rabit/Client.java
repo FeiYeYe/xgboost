@@ -1,5 +1,6 @@
 package org.apache.hadoop.yarn.rabit;
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.util.Collections;
 import java.util.Map;
 
@@ -9,6 +10,9 @@ import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.permission.FsPermission;
+import org.apache.hadoop.io.DataOutputBuffer;
+import org.apache.hadoop.security.UserGroupInformation;
+import org.apache.hadoop.security.Credentials;
 import org.apache.hadoop.yarn.api.ApplicationConstants;
 import org.apache.hadoop.yarn.api.records.ApplicationId;
 import org.apache.hadoop.yarn.api.records.ApplicationReport;
@@ -19,6 +23,7 @@ import org.apache.hadoop.yarn.api.records.LocalResource;
 import org.apache.hadoop.yarn.api.records.LocalResourceType;
 import org.apache.hadoop.yarn.api.records.LocalResourceVisibility;
 import org.apache.hadoop.yarn.api.records.Resource;
+import org.apache.hadoop.yarn.api.records.QueueInfo;
 import org.apache.hadoop.yarn.api.records.YarnApplicationState;
 import org.apache.hadoop.yarn.client.api.YarnClient;
 import org.apache.hadoop.yarn.client.api.YarnClientApplication;
@@ -43,18 +48,39 @@ public class Client {
     private String appArgs = "";
     // HDFS Path to store temporal result
     private String tempdir = "/tmp";
+    // user name
+    private String userName = "";
+    // user credentials
+    private Credentials credentials = null;
     // job name
     private String jobName = "";
+    // queue
+    private String queue = "default";
     /**
      * constructor
      * @throws IOException
      */
     private Client() throws IOException {
+        conf.addResource(new Path(System.getenv("HADOOP_CONF_DIR") +"/core-site.xml"));
+        conf.addResource(new Path(System.getenv("HADOOP_CONF_DIR") +"/hdfs-site.xml"));
         dfs = FileSystem.get(conf);
+        userName = UserGroupInformation.getCurrentUser().getShortUserName();
+        credentials = UserGroupInformation.getCurrentUser().getCredentials();
     }
     
     /**
-     * ge
+     * setup security token given current user
+     * @return the ByeBuffer containing the security tokens
+     * @throws IOException
+     */
+    private ByteBuffer setupTokens() throws IOException {
+        DataOutputBuffer buffer = new DataOutputBuffer();
+        this.credentials.writeTokenStorageToStream(buffer);
+        return ByteBuffer.wrap(buffer.getData());
+    }
+    
+    /**
+     * setup all the cached files
      * 
      * @param fmaps
      *            the file maps
@@ -127,6 +153,9 @@ public class Client {
             if (e.getKey().startsWith("rabit_")) {
                 env.put(e.getKey(), e.getValue());
             }
+            if (e.getKey() == "LIBHDFS_OPTS") {
+                env.put(e.getKey(), e.getValue());
+            }
         }
         LOG.debug(env);
         return env;
@@ -152,6 +181,8 @@ public class Client {
                 this.jobName = args[++i];
             } else if(args[i].equals("-tempdir")) {
                 this.tempdir = args[++i];
+            } else if(args[i].equals("-queue")) {
+                this.queue = args[++i];
             } else {
                 sargs.append(" ");
                 sargs.append(args[i]);
@@ -168,7 +199,6 @@ public class Client {
         }
         this.initArgs(args);
         // Create yarnClient
-        YarnConfiguration conf = new YarnConfiguration();
         YarnClient yarnClient = YarnClient.createYarnClient();
         yarnClient.init(conf);
         yarnClient.start();
@@ -183,11 +213,13 @@ public class Client {
                 .getApplicationSubmissionContext();
         // Submit application
         ApplicationId appId = appContext.getApplicationId();
+        // setup security token
+        amContainer.setTokens(this.setupTokens());
         // setup cache-files and environment variables
         amContainer.setLocalResources(this.setupCacheFiles(appId));
         amContainer.setEnvironment(this.getEnvironment());
         String cmd = "$JAVA_HOME/bin/java"
-                + " -Xmx256M"
+                + " -Xmx900M"
                 + " org.apache.hadoop.yarn.rabit.ApplicationMaster"
                 + this.cacheFileArg + ' ' + this.appArgs + " 1>"
                 + ApplicationConstants.LOG_DIR_EXPANSION_VAR + "/stdout"
@@ -197,15 +229,15 @@ public class Client {
 
         // Set up resource type requirements for ApplicationMaster
         Resource capability = Records.newRecord(Resource.class);
-        capability.setMemory(256);
+        capability.setMemory(1024);
         capability.setVirtualCores(1);
-        LOG.info("jobname=" + this.jobName);
-
+        LOG.info("jobname=" + this.jobName + ",username=" + this.userName);
+        
         appContext.setApplicationName(jobName + ":RABIT-YARN");
         appContext.setAMContainerSpec(amContainer);
         appContext.setResource(capability);
-        appContext.setQueue("default");
-  
+        appContext.setQueue(queue);
+        //appContext.setUser(userName);
         LOG.info("Submitting application " + appId);      
         yarnClient.submitApplication(appContext);
 
@@ -218,12 +250,16 @@ public class Client {
             appReport = yarnClient.getApplicationReport(appId);
             appState = appReport.getYarnApplicationState();
         }
-
+        
         System.out.println("Application " + appId + " finished with"
                 + " state " + appState + " at " + appReport.getFinishTime());
         if (!appReport.getFinalApplicationStatus().equals(
                 FinalApplicationStatus.SUCCEEDED)) {
             System.err.println(appReport.getDiagnostics());
+            System.out.println("Available queues:");
+            for (QueueInfo q : yarnClient.getAllQueues()) {
+              System.out.println(q.getQueueName());
+            }
         }
     }
 
