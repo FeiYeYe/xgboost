@@ -109,7 +109,6 @@ xgb.get.DMatrix <- function(data, label = NULL, missing = NULL, weight = NULL) {
     if (is.null(label)) {
       stop("xgboost: need label when data is a matrix")
     }
-    dtrain <- xgb.DMatrix(data, label = label)
     if (is.null(missing)){
       if (is.null(weight)) {
         dtrain <- xgb.DMatrix(data, label = label)
