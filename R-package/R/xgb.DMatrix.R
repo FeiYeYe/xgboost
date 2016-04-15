@@ -41,6 +41,5 @@ xgb.DMatrix <- function(data, info = list(), missing = NA, ...) {
     p <- info[i]
     xgb.setinfo(dmat, names(p), p[[1]])
   }
-  M
   return(dmat)
 }
