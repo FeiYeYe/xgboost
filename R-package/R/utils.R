@@ -309,6 +309,7 @@ xgb.cv.aggcv <- function(res, showsd = TRUE) {
 }
 
 xgb.cv.optimal <- function(x, auc = TRUE) {
+  x <- x$dt
   regx <- grepl("^test(.*)mean$", names(x))
     if (sum(regx) != 1) {
       stop("[xgb.cv.optimal] the cv column is not uniquely identified", call. = FALSE)
